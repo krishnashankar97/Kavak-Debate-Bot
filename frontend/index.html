@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DebateBot UI</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🗣️ DebateBot</h1>
+      <div class="env">
+        <label>API Base:</label>
+        <input id="apiBase" value="http://localhost:8080" />
+        <button id="saveBase">Save</button>
+      </div>
+    </header>
+
+    <main id="chat">
+      <div id="messages"></div>
+    </main>
+
+    <footer>
+      <form id="chatForm">
+        <input id="userInput" placeholder="Start by defining topic + side, e.g., 'Debate that nuclear is safer than coal about energy policy.'" />
+        <button type="submit">Send</button>
+      </form>
+      <div class="meta">
+        <span>Conversation ID: <code id="cid">(new)</code></span>
+        <button id="resetBtn" title="Start a new debate">New Debate</button>
+      </div>
+    </footer>
+  </div>
+  <script src="/static/script.js"></script>
+</body>
+</html>
