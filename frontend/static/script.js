@@ -1,31 +1,20 @@
 (() => {
-  const $ = (s)=>document.querySelector(s);
+  const $ = (s) => document.querySelector(s);
   const messages = $("#messages");
   const input = $("#userInput");
   const form = $("#chatForm");
   const cidEl = $("#cid");
   const resetBtn = $("#resetBtn");
-  const apiBaseInput = $("#apiBase");
-  const saveBaseBtn = $("#saveBase");
 
   let conversationId = null;
-  let apiBase = localStorage.getItem("debatebot.apiBase") || apiBaseInput.value;
-  apiBaseInput.value = apiBase;
 
-  function addMsg(role, text){
+  function addMsg(role, text) {
     const div = document.createElement("div");
     div.className = "msg " + (role === "user" ? "user" : "bot");
     div.textContent = text;
     messages.appendChild(div);
     messages.parentElement.scrollTop = messages.parentElement.scrollHeight;
   }
-
-  saveBaseBtn.onclick = () => {
-    apiBase = apiBaseInput.value.trim();
-    localStorage.setItem("debatebot.apiBase", apiBase);
-    saveBaseBtn.textContent = "Saved";
-    setTimeout(()=>saveBaseBtn.textContent="Save", 1000);
-  };
 
   resetBtn.onclick = () => {
     conversationId = null;
@@ -37,22 +26,44 @@
   form.onsubmit = async (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if(!text) return;
+    if (!text) return;
     addMsg("user", text);
     input.value = "";
     try {
-      const res = await fetch(apiBase + "/api/v1/chat/webhook", {
+      const res = await fetch("/api/v1/chat/webhook", {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ conversation_id: conversationId, message: text })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          message: text,
+        }),
       });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        addMsg("bot", `API error (${res.status}): ${errText || "no body"}`);
+        return;
+      }
+
       const data = await res.json();
-      conversationId = data.conversation_id;
-      cidEl.textContent = conversationId;
-      const last = data.message[data.message.length-1];
-      if(last && last.role === "bot") addMsg("bot", last.message);
-    } catch(err){
-      addMsg("bot", "Error contacting API: " + err.message);
+
+      if (data.conversation_id) {
+        conversationId = data.conversation_id;
+        cidEl.textContent = conversationId;
+      }
+
+      if (Array.isArray(data.message) && data.message.length > 0) {
+        const last = data.message[data.message.length - 1];
+        if (last && last.role === "bot" && typeof last.message === "string") {
+          addMsg("bot", last.message);
+        } else {
+          addMsg("bot", "No bot message in response.");
+        }
+      } else {
+        addMsg("bot", "Empty or unrecognized response from API.");
+      }
+    } catch (err) {
+      addMsg("bot", "Error contacting API: " + (err?.message || String(err)));
     }
   };
 })();
